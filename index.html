@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crystal Queue — задачи для ПК с телефона</title>
+<meta name="description" content="Очередь задач для ПК: пишешь с телефона через GitHub Gist, раннер на компьютере забирает и выполняет через opencode.">
+<meta name="theme-color" content="#0D0D17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Queue">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <polygon points="16,2 23,12.5 16,30 9,12.5" fill="none"/>
+        <polygon points="16,2 9,12.5 16,16.5" fill="#2E6BFF"/>
+        <polygon points="16,2 16,16.5 23,12.5" fill="#BFE3FF"/>
+        <polygon points="9,12.5 16,30 16,16.5" fill="#7C5CFC"/>
+        <polygon points="16,16.5 16,30 23,12.5" fill="#4A3D8F"/>
+        <polygon points="16,2 14.7,8.5 16,16.5" fill="#FFFFFF" opacity="0.55"/>
+      </svg>
+      <span>Crystal<b>Queue</b></span>
+    </a>
+    <div class="top-right">
+      <span class="sync" id="syncState" title="Связь с GitHub Gist">
+        <span class="led"></span><span class="sync-text">не подключено</span>
+      </span>
+      <button class="icon-btn" id="themeBtn" title="Тема" aria-label="Сменить тему">
+        <svg class="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" title="Настройки" aria-label="Настройки">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1A1.6 1.6 0 007 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.6 1.6 0 003 15a2 2 0 00-2-2H1a2 2 0 110-4h.1A1.6 1.6 0 002.6 7a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1A1.6 1.6 0 007 2.6h.1A1.6 1.6 0 008.6 1V1a2 2 0 114 0v.1A1.6 1.6 0 0015 2.6a1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1A1.6 1.6 0 0019.4 7v.1a1.6 1.6 0 001.5 1.5H21a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1.5z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- Статистика -->
+  <section class="stats" id="stats">
+    <div class="stat"><b id="stNew">0</b><span>в очереди</span></div>
+    <div class="stat"><b id="stRunning">0</b><span>выполняется</span></div>
+    <div class="stat"><b id="stDone">0</b><span>готово</span></div>
+    <div class="stat"><b id="stFailed">0</b><span>ошибки</span></div>
+  </section>
+
+  <!-- Раннер -->
+  <section class="runner-card" id="runnerCard">
+    <div class="runner-row">
+      <span class="runner-dot" id="runnerDot"></span>
+      <div class="runner-info">
+        <b id="runnerTitle">Раннер не на связи</b>
+        <span id="runnerSub">ПК выключен или раннер не запущен — задачи копятся и ждут</span>
+      </div>
+    </div>
+    <div class="runner-log" id="runnerLog" hidden></div>
+  </section>
+
+  <!-- Форма задачи -->
+  <section class="card add-card">
+    <label class="card-title" for="taskText">Новая задача</label>
+    <textarea id="taskText" rows="3" placeholder="Например: добавить модуль AutoTotem в ClickGUI с настройкой задержки"></textarea>
+
+    <div class="add-row">
+      <div class="seg" id="prioritySeg" role="group" aria-label="Приоритет">
+        <button data-priority="low">низкий</button>
+        <button data-priority="normal" class="on">обычный</button>
+        <button data-priority="high">высокий</button>
+      </div>
+      <input type="text" id="taskProject" class="mini-input" placeholder="проект: crystal" list="projectList" autocomplete="off">
+      <datalist id="projectList"></datalist>
+    </div>
+
+    <div class="add-actions">
+      <label class="checkbox">
+        <input type="checkbox" id="taskDraft">
+        <span>черновик (не отправлять)</span>
+      </label>
+      <button class="btn btn-solid" id="addBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        В очередь
+      </button>
+    </div>
+    <p class="hint" id="addHint">Задача уйдёт в GitHub Gist — раннер на ПК подхватит её, когда будет включён.</p>
+  </section>
+
+  <!-- Фильтры -->
+  <section class="filters">
+    <div class="seg" id="filterSeg" role="group" aria-label="Фильтр">
+      <button data-filter="active" class="on">Активные</button>
+      <button data-filter="all">Все</button>
+      <button data-filter="done">Готовые</button>
+      <button data-filter="failed">Ошибки</button>
+    </div>
+    <div class="filters-right">
+      <input type="search" id="searchInput" placeholder="Поиск" autocomplete="off">
+      <button class="icon-btn" id="refreshBtn" title="Обновить" aria-label="Обновить">
+        <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.6M20 4v5h-5"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- Список -->
+  <section class="list" id="taskList"></section>
+
+  <p class="foot-note" id="footNote"></p>
+</main>
+
+<!-- Онбординг / настройки -->
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet" id="sheet" aria-hidden="true" aria-label="Настройки">
+  <header class="sheet-head">
+    <h3 id="sheetTitle">Подключение</h3>
+    <button class="icon-btn" id="closeSheet" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </header>
+
+  <div class="sheet-body">
+    <p class="sheet-lead">Очередь хранится в приватном GitHub Gist: телефон пишет туда задачи,
+      раннер на ПК их забирает и выполняет через <code>opencode</code>.</p>
+
+    <div class="field">
+      <label for="ghToken">GitHub-токен (PAT)</label>
+      <div class="key-row">
+        <input type="password" id="ghToken" placeholder="ghp_…" autocomplete="off" spellcheck="false">
+        <button class="icon-btn" id="toggleToken" aria-label="Показать токен">
+          <svg viewBox="0 0 24 24"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+        </button>
+      </div>
+      <p class="help">Создать: GitHub → Settings → Developer settings → <b>Personal access tokens → Tokens (classic)</b>
+        → Generate new token → отметить только <code>gist</code>. Токен хранится в этом браузере.</p>
+    </div>
+
+    <div class="field">
+      <label for="gistId">Gist ID <span class="opt">(необязательно)</span></label>
+      <input type="text" id="gistId" placeholder="например 3f1a9c…" autocomplete="off" spellcheck="false">
+      <p class="help">Оставь пустым — создам новый приватный gist автоматически.
+        Если уже есть (например, созданный раннером), вставь его ID.</p>
+    </div>
+
+    <hr class="sep">
+
+    <div class="field">
+      <label for="pollInterval">Автообновление, сек</label>
+      <input type="number" id="pollInterval" min="5" max="600" step="5" value="20">
+      <p class="help">Как часто перечитывать gist, чтобы видеть статусы выполнения.</p>
+    </div>
+
+    <div class="field">
+      <label class="checkbox"><input type="checkbox" id="rememberToken" checked><span>Запомнить токен в этом браузере</span></label>
+      <label class="checkbox"><input type="checkbox" id="notifyDone" checked><span>Показывать уведомление, когда задача выполнена</span></label>
+      <label class="checkbox"><input type="checkbox" id="confirmDelete" checked><span>Спрашивать подтверждение при удалении</span></label>
+    </div>
+
+    <hr class="sep">
+
+    <div class="field">
+      <label>Команда для раннера на ПК</label>
+      <pre class="cmd" id="runnerCmd">node runner/runner.mjs --setup</pre>
+      <button class="btn btn-ghost btn-sm" id="copyCmd">Скопировать</button>
+      <p class="help">Запусти это в папке <code>task-queue</code> на компьютере — раннер сам создаст
+        gist (если нужно), сохранит конфиг и начнёт выполнять задачи.</p>
+    </div>
+
+    <div class="field danger-zone">
+      <label>Опасная зона</label>
+      <div class="ctx-row">
+        <button class="btn btn-ghost btn-sm danger-ghost" id="clearDone">Убрать выполненные из gist</button>
+        <button class="btn btn-ghost btn-sm danger-ghost" id="wipeLocal">Стереть настройки телефона</button>
+      </div>
+    </div>
+
+    <div class="diag" id="diag" hidden></div>
+  </div>
+
+  <footer class="sheet-foot">
+    <span class="save-note" id="saveNote"></span>
+    <button class="btn btn-ghost btn-sm" id="diagBtn">Диагностика</button>
+    <button class="btn btn-solid" id="saveSheet">Сохранить</button>
+  </footer>
+</section>
+
+<!-- Просмотр задачи -->
+<div class="scrim" id="scrim2" hidden></div>
+<section class="sheet" id="taskSheet" aria-hidden="true" aria-label="Задача">
+  <header class="sheet-head">
+    <h3 id="tsTitle">Задача</h3>
+    <button class="icon-btn" id="closeTaskSheet" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </header>
+  <div class="sheet-body" id="tsBody"></div>
+  <footer class="sheet-foot">
+    <button class="btn btn-ghost btn-sm" id="tsCopy">Копировать текст</button>
+    <button class="btn btn-ghost btn-sm" id="tsRetry">Повторить</button>
+    <button class="btn btn-solid" id="tsClose">Закрыть</button>
+  </footer>
+</section>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
