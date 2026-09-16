@@ -936,9 +936,14 @@ function bind() {
   $('attachFile').addEventListener('change', (e) => {
     onAttachFile(e.target.files?.[0]);
   });
-  $('attachRemove').addEventListener('click', () => {
+  $('attachRemove').addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
     setPendingImage(null);
     setHint('Картинка убрана', '');
+  });
+  // страховка: клик по самому превью тоже ничего не должен ломать
+  $('attachPreview').addEventListener('click', (e) => {
+    if (e.target === $('attachImg')) return; // клик по картинке — просто смотрим
   });
 
   $('filterSeg').addEventListener('click', (e) => {
