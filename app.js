@@ -564,6 +564,66 @@ function renderFoot() {
 
 /* ------------------------------ actions ------------------------------ */
 
+/* ---------- вложение-скриншот (dataURL в задаче, раннер опишет его через API) ---------- */
+
+const IMG_MAX_BYTES = 2.5 * 1024 * 1024;   // 2.5 МБ до сжатия
+const IMG_TARGET_KB = 350;                 // цель после сжатия — влезть в задачу gist
+let pendingImage = null;                   // { dataUrl }
+
+function setPendingImage(dataUrl) {
+  pendingImage = dataUrl ? { dataUrl } : null;
+  const box = $('attachPreview');
+  const btn = $('attachBtn');
+  if (dataUrl) {
+    $('attachImg').src = dataUrl;
+    box.hidden = false;
+    btn.classList.add('has-image');
+  } else {
+    box.hidden = true;
+    btn.classList.remove('has-image');
+    $('attachFile').value = '';
+  }
+}
+
+/** Сжимаем картинку canvas'ом: max 1280 по длинной стороне, JPEG q=0.7, шагами до ~350 КБ. */
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!/^image\//.test(file.type)) return reject(new Error('это не изображение'));
+    if (file.size > IMG_MAX_BYTES) return reject(new Error('файл больше 2.5 МБ'));
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      let q = 0.7, dataUrl = '';
+      for (let i = 0; i < 6; i++) {
+        dataUrl = canvas.toDataURL('image/jpeg', q);
+        if (dataUrl.length < IMG_TARGET_KB * 1024 * 1.37) break;  // base64 ~ +37%
+        q -= 0.1;
+      }
+      resolve(dataUrl);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('не удалось прочитать изображение')); };
+    img.src = url;
+  });
+}
+
+async function onAttachFile(file) {
+  if (!file) return;
+  try {
+    const dataUrl = await compressImage(file);
+    setPendingImage(dataUrl);
+    setHint('Скриншот прикреплён — Астра получит его описание', 'ok');
+  } catch (e) {
+    setHint(e.message, 'err');
+  }
+}
+
 function makeTask(text, priority, project) {
   return {
     id: uid(),
@@ -575,6 +635,7 @@ function makeTask(text, priority, project) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     createdBy: 'phone',
+    image: pendingImage ? pendingImage.dataUrl : undefined,
     _dirty: true
   };
 }
@@ -593,6 +654,7 @@ async function addTask() {
     drafts.unshift({ ...makeTask(text, priority, project), status: 'draft' });
     writeLS(LS.drafts, drafts);
     ta.value = ''; autoGrow(ta);
+    setPendingImage(null);
     setHint('Сохранено как черновик — только на этом телефоне', 'ok');
     renderAll();
     return;
@@ -603,6 +665,7 @@ async function addTask() {
   tasks = sortTasks(tasks);
   persistTasks();
   ta.value = ''; autoGrow(ta);
+  setPendingImage(null);
   renderAll();
   setHint('Добавлено. Синхронизирую с gist…', '');
 
@@ -866,6 +929,16 @@ function bind() {
   $('prioritySeg').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-priority]'); if (!b) return;
     $('prioritySeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  });
+
+  // вложение-скриншот
+  $('attachBtn').addEventListener('click', () => $('attachFile').click());
+  $('attachFile').addEventListener('change', (e) => {
+    onAttachFile(e.target.files?.[0]);
+  });
+  $('attachRemove').addEventListener('click', () => {
+    setPendingImage(null);
+    setHint('Картинка убрана', '');
   });
 
   $('filterSeg').addEventListener('click', (e) => {
