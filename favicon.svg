@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#0D0D17"/>
+  <!-- Гранёный самоцвет: вытянутый ромб с гранями -->
+  <polygon points="16,3 23,13.5 16,29 9,13.5" fill="none"/>
+  <!-- лево-верх -->
+  <polygon points="16,3 9,13.5 16,17" fill="#2E6BFF"/>
+  <!-- право-верх светлая -->
+  <polygon points="16,3 16,17 23,13.5" fill="#BFE3FF"/>
+  <!-- лево-низ фиолет -->
+  <polygon points="9,13.5 16,29 16,17" fill="#7C5CFC"/>
+  <!-- право-низ тёмный -->
+  <polygon points="16,17 16,29 23,13.5" fill="#4A3D8F"/>
+  <!-- блики -->
+  <polygon points="16,3 14.7,9 16,17" fill="#FFFFFF" opacity="0.55"/>
+  <polygon points="16,3 17.3,9 16,17" fill="#FFFFFF" opacity="0.25"/>
+  <polygon points="9,13.5 12.5,10.4 16,17" fill="#FFFFFF" opacity="0.30"/>
+  <polygon points="23,13.5 19.5,10.4 16,17" fill="#FFFFFF" opacity="0.18"/>
+  <!-- контур -->
+  <polygon points="16,3 23,13.5 16,29 9,13.5" fill="none" stroke="#7C5CFC" stroke-width="0.8" opacity="0.6"/>
+</svg>
